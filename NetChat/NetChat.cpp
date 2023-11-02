@@ -2,10 +2,55 @@
 //
 
 #include <iostream>
+#include <thread>
+#include <csignal>
+
+std::thread* thread_listener;
+std::thread* thread_speaker;
+
+
+int ListenerThread();
+int SenderThread();
+
+void signal_handler(int sig);
+
+int ListenerThread() {
+    printf("\tThread 1 Complete\n");
+    return 0;
+}
+
+int SenderThread() {
+    printf("\tThread 2 Complete\n");
+    return 0;
+}
+
+void signal_handler(int sig) {
+    printf("Signal Handler called. Joining threads...\n");
+    thread_listener->join();
+    thread_speaker->join();
+
+    printf("Threads joined. Deleting thread objects...\n");
+
+    delete thread_listener;
+    delete thread_speaker;
+
+    printf("Finished. Exiting.\n");
+
+    exit(0);
+}
 
 int main()
 {
-    std::cout << "Hello World!\n";
+    printf("Setting signal handler\n");
+
+    signal(SIGINT, signal_handler);
+
+    std::cout << "Initilizing Threads...\n";
+
+    thread_listener = new std::thread(ListenerThread);
+    thread_speaker = new std::thread(SenderThread);
+
+    raise(SIGINT);
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
