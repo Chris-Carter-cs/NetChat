@@ -67,7 +67,7 @@ int main()
     
     Sleep(2000);
 
-    printf("Listener done.\nInitilizing speaker thread...\n");
+    printf("Initilizing speaker thread...\n");
     thread_speaker = new std::thread(&startSpeaker);
 
     //raise(SIGINT);

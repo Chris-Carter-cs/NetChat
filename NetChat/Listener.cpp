@@ -3,7 +3,6 @@
 int Listener::listener_main() {
 	runLoop = 1;
 	initSocket();
-
 	startListening();
 
 	return 0;
@@ -49,22 +48,26 @@ int Listener::initSocket() {
 /// Begin listening for a message from another user. This function is blocking, as it calls recv(...)
 /// </summary>
 int Listener::startListening() {
+	printf("Listening...\n");
 	//Clear buffer.
 	ZeroMemory(buffer, BUFFER_SIZE);
 	int result = 0;
-	while (runLoop);
+	while (true)
 	{
+		//printf("Listen Loop\n");
 		result = recv(listenSocket, buffer, BUFFER_SIZE, 0);
 		if (result < 0) {
 			printf("Error in startListening function of type %d\n", WSAGetLastError());
 			runLoop = 0;
 			return 1;
 		}
-		//Process data...
-		printf("\tLength %d Datagram received: %s\n", result, buffer);
+		if (result > 0) {
+			//Process data...
+			printf("\tLength %d Datagram received: %s\n", result, buffer);
+		}
 	}
 
-	
+	printf("This shouldn't be printed\n");
 	return 0;
 }
 
