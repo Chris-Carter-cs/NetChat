@@ -1,6 +1,11 @@
 #include "Speaker.h"
 
-int Speaker::speaker_main() { return 0; }
+int Speaker::speaker_main() { 
+	initSocket();
+	Sleep(2);
+	sendMessage();
+	return 0;
+}
 
 
 
@@ -11,7 +16,7 @@ int Speaker::initSocket() {
 		return 1;
 	}
 
-	SOCKET speakerSocket = INVALID_SOCKET;
+	speakerSocket = INVALID_SOCKET;
 	speakerSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (speakerSocket == INVALID_SOCKET) {
 		printf("Speaker socket failed with error %d\n", WSAGetLastError());
@@ -28,17 +33,29 @@ int Speaker::initSocket() {
 		return 1;
 	}
 
-	printf("UDP Speaker set up. Ready for call to recv.");
+	printf("UDP Speaker set up. Ready for call to sendto.\n");
 	return 0;
 }
 int Speaker::sendMessage() {
+	printf("Sending message...\n");
 	ZeroMemory(&dstAddr, sizeof(dstAddr));
-	dstAddr.sin_port = 5850;
+	dstAddr.sin_family = AF_INET;
+	dstAddr.sin_port = htons(5850);
 	inet_pton(AF_INET, "127.0.0.1", &dstAddr.sin_addr.s_addr);
+
+	ZeroMemory(buffer, BUFFER_SIZE);
+	strcpy_s(buffer, "Cross-port message!");
 
 	int result;
 	result = sendto(speakerSocket, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&dstAddr, BUFFER_SIZE);
-	
-	return 0;
+	if (result < 0) {
+		printf("Error in send of type %d\n", WSAGetLastError());
+	}
+	printf("Message sent!\n");
 
+	return 0;
+}
+
+Speaker::~Speaker() {
+	closesocket(speakerSocket);
 }

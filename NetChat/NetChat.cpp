@@ -40,6 +40,8 @@ void signal_handler(int sig) {
 
     printf("Finished. Exiting.\n");
 
+    
+
     exit(0);
 }
 
@@ -63,10 +65,15 @@ int main()
     printf("Initilizing listener thread...\n");
     thread_listener = new std::thread(&startListener);
     
+    Sleep(2000);
+
     printf("Listener done.\nInitilizing speaker thread...\n");
     thread_speaker = new std::thread(&startSpeaker);
 
-    raise(SIGINT);
+    //raise(SIGINT);
+    while (true) {
+
+    }
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

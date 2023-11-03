@@ -9,7 +9,7 @@
 class Listener
 {
 	static const int DEFAULT_PORT = 5850;
-	static const int BUFFER_SIZE = 2048;
+	static const int BUFFER_SIZE = 1024;
 
 	struct sockaddr_in listenAddr;
 	SOCKET listenSocket;
@@ -24,5 +24,7 @@ public:
 	int listener_main();
 	int initSocket();
 	int startListening();
+
+	~Listener();
 };
 

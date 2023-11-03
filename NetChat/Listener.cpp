@@ -51,9 +51,10 @@ int Listener::initSocket() {
 int Listener::startListening() {
 	//Clear buffer.
 	ZeroMemory(buffer, BUFFER_SIZE);
-	int result;
-	while (runLoop && (result = recv(listenSocket, buffer, BUFFER_SIZE, 0)) > 0);
+	int result = 0;
+	while (runLoop);
 	{
+		result = recv(listenSocket, buffer, BUFFER_SIZE, 0);
 		if (result < 0) {
 			printf("Error in startListening function of type %d\n", WSAGetLastError());
 			runLoop = 0;
@@ -65,4 +66,8 @@ int Listener::startListening() {
 
 	
 	return 0;
+}
+
+Listener::~Listener() {
+	closesocket(listenSocket);
 }
