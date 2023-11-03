@@ -127,7 +127,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Listener.cpp" />
     <ClCompile Include="NetChat.cpp" />
+    <ClCompile Include="Speaker.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Listener.h" />
+    <ClInclude Include="Speaker.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

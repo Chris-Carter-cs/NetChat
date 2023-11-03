@@ -4,32 +4,36 @@
 #include <iostream>
 #include <thread>
 #include <csignal>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include "Speaker.h"
+#include "Listener.h"
+
+#pragma comment(lib, "Ws2_32.lib")
 
 std::thread* thread_listener;
 std::thread* thread_speaker;
 
+Speaker* speaker;
+Listener* listener;
 
-int ListenerThread();
-int SenderThread();
 
 void signal_handler(int sig);
 
-int ListenerThread() {
-    printf("\tThread 1 Complete\n");
-    return 0;
-}
-
-int SenderThread() {
-    printf("\tThread 2 Complete\n");
-    return 0;
-}
-
 void signal_handler(int sig) {
+    listener->runLoop = 0;
+
+    printf("Cleaning up WSA...\n");
+    WSACleanup();
+    
     printf("Signal Handler called. Joining threads...\n");
     thread_listener->join();
     thread_speaker->join();
 
     printf("Threads joined. Deleting thread objects...\n");
+
+    delete listener;
+    delete speaker;
 
     delete thread_listener;
     delete thread_speaker;
@@ -39,16 +43,28 @@ void signal_handler(int sig) {
     exit(0);
 }
 
+void startListener() {
+    listener->listener_main();
+}
+
+void startSpeaker() {
+    speaker->speaker_main();
+}
+
 int main()
 {
-    printf("Setting signal handler\n");
+    speaker = new Speaker();
+    listener = new Listener();
 
+
+    printf("Setting signal handler\n");
     signal(SIGINT, signal_handler);
 
-    std::cout << "Initilizing Threads...\n";
-
-    thread_listener = new std::thread(ListenerThread);
-    thread_speaker = new std::thread(SenderThread);
+    printf("Initilizing listener thread...\n");
+    thread_listener = new std::thread(&startListener);
+    
+    printf("Listener done.\nInitilizing speaker thread...\n");
+    thread_speaker = new std::thread(&startSpeaker);
 
     raise(SIGINT);
 }
