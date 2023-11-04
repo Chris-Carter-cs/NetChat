@@ -8,6 +8,7 @@
 #include <ws2tcpip.h>
 #include "Speaker.h"
 #include "Listener.h"
+#include "STUN_IF.h"
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -55,7 +56,7 @@ void startSpeaker() {
 
 int main()
 {
-    speaker = new Speaker();
+    /*speaker = new Speaker();
     listener = new Listener();
 
 
@@ -68,12 +69,26 @@ int main()
     Sleep(2000);
 
     printf("Initilizing speaker thread...\n");
-    thread_speaker = new std::thread(&startSpeaker);
+    thread_speaker = new std::thread(&startSpeaker);*/
+
+    WSAData data;
+    int result = WSAStartup(MAKEWORD(2, 2), &data);
+    if (result != 0) {
+        printf("STUN socket failed with error %d\n", result);
+        return 0;
+    }
+
+    //STUN server:   stun.l.google.com:19302
+    SetServerName("stun.l.google.com");
+    SetServerPort(19302);
+    TestConnection();
+    
 
     //raise(SIGINT);
-    while (true) {
 
-    }
+    
+
+    return 0;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
