@@ -3,6 +3,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdio.h>
+#include "STUN_IF.h"
 
 
 
@@ -19,9 +20,12 @@ class Listener
 	char buffer[2048];
 
 public:
-	int runLoop;
+	int callRecv;
 
-	int listener_main();
+	int init();
+
+	void QuerySTAB(sockaddr_in _STUNAddress, UINT32* _outIP, UINT16* _outPort);
+
 	int initSocket();
 	int startListening();
 

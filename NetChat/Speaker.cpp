@@ -1,42 +1,92 @@
 #include "Speaker.h"
 
-int Speaker::speaker_main() { 
-	initSocket();
-	Sleep(2);
-	sendMessage();
+int Sender::init() {
+	int result;
+
+	//Create socket
+	senderSocket = INVALID_SOCKET;
+	senderSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (senderSocket == INVALID_SOCKET) {
+		printf("Error in socket creation in Sender::init(): %d\n", WSAGetLastError());
+		exit(1);
+	}
+
+	//Configure local address
+	ZeroMemory(&senderAddr, sizeof(senderAddr));
+	senderAddr.sin_family = AF_INET;
+	senderAddr.sin_port = htons(speakPort);
+	
+	//Bind address to socket
+	result = bind(senderSocket, (sockaddr*)&senderAddr, sizeof(senderAddr));
+	if (result < 0) {
+		printf("Error in socket binding in Sender::init(): %d\n", WSAGetLastError());
+		exit(1);
+	}
+
 	return 0;
+}
+
+void Sender::QuerySTAB(sockaddr_in _STUNAddress, UINT32* _outIP, UINT16* _outPort) {
+	//Declare values for the request and response.
+	BindingRequest request;
+	BindingResponse response;
+
+	//Send the request
+	printf("Sending STUN request for Sender.\n");
+	sendto(senderSocket, (char*)&request, sizeof(request), 0, (sockaddr*)&_STUNAddress, sizeof(_STUNAddress));
+
+	//Set up the values for the call to `select()`
+	INT64 timeout = 5000l;
+
+	int attempt = 0;
+	int result;
+	setsockopt(senderSocket, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
+	do {
+		printf("Waiting for STUN response for Sender (%d/%d)... ", attempt+1, 8);
+		result = recv(senderSocket, (char*)&response, sizeof(response), 0);
+
+		if (result == SOCKET_ERROR) {
+			result = WSAGetLastError();
+			if (result == WSAETIMEDOUT) {
+				//Timed out
+				printf("Time out.\n");
+				attempt++;
+			}
+			else {
+				printf("Error in Sender's STUN request: %d\n", result);
+				exit(1);
+			}
+		}
+		
+		printf("STUN response for Sender\n");
+
+		printf("Response received:\n\tType:%x\tLength: %u\n", response.Type, response.Length);
+
+		int attributeOffset = 0;
+		UINT16 type, length;
+		do {
+			type = htons(*(UINT16*)(response.Attributes + attributeOffset));
+			length = htons(*(UINT16*)(response.Attributes + attributeOffset + 2));
+
+			printf("\tAttribute Type: %x, \tLength: %u\n", type, length);
+
+			if (type == MAPPED_ADDR_ATTRIBUTE) {
+				*_outIP = (*(UINT32*)(response.Attributes + attributeOffset + 8));
+				*_outPort = ((*(UINT16*)(response.Attributes + attributeOffset + 6)));	//Sender port is from bit 16-32
+				return;
+			}
+			attributeOffset += length + 4;
+		} while (type != 0 && attributeOffset < 1028);
+
+	} while (attempt < 8);
+
+	printf("STUN response for sender timed out %d times. Aborting...\n", attempt);
+	exit(1);
 }
 
 
 
-int Speaker::initSocket() { 
-	int result = WSAStartup(MAKEWORD(2, 2), &data);
-	if (result != 0) {
-		printf("Speaking socket failed with error %d\n", result);
-		return 1;
-	}
-
-	speakerSocket = INVALID_SOCKET;
-	speakerSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (speakerSocket == INVALID_SOCKET) {
-		printf("Speaker socket failed with error %d\n", WSAGetLastError());
-		return 1;
-	}
-
-	ZeroMemory(&speakerAddr, sizeof(speakerAddr));
-	speakerAddr.sin_family = AF_INET;
-	speakerAddr.sin_port = htons(speakPort);
-	inet_pton(AF_INET, "127.0.0.1", &speakerAddr.sin_addr.s_addr);
-
-	if (bind(speakerSocket, (SOCKADDR*)&speakerAddr, sizeof(speakerAddr))) {
-		printf("Speaker bind failed with error %d\n", WSAGetLastError());
-		return 1;
-	}
-
-	printf("UDP Speaker set up. Ready for call to sendto.\n");
-	return 0;
-}
-int Speaker::sendMessage() {
+int Sender::sendMessage() {
 	printf("Sending message...\n");
 	ZeroMemory(&dstAddr, sizeof(dstAddr));
 	dstAddr.sin_family = AF_INET;
@@ -47,7 +97,7 @@ int Speaker::sendMessage() {
 	strcpy_s(buffer, "Cross-port message!");
 
 	int result;
-	result = sendto(speakerSocket, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&dstAddr, BUFFER_SIZE);
+	result = sendto(senderSocket, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&dstAddr, BUFFER_SIZE);
 	if (result < 0) {
 		printf("Error in send of type %d\n", WSAGetLastError());
 	}
@@ -56,6 +106,6 @@ int Speaker::sendMessage() {
 	return 0;
 }
 
-Speaker::~Speaker() {
-	closesocket(speakerSocket);
+Sender::~Sender() {
+	closesocket(senderSocket);
 }
