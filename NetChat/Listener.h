@@ -21,6 +21,7 @@ class Listener
 
 public:
 	int callRecv;
+	int runLoop;
 
 	int init();
 

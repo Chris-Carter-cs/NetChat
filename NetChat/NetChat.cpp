@@ -19,7 +19,47 @@ int main()
     SetServerPort(19302);
 
     ConfigureSockets();
-    QuerySTAB();
+    UINT64 skey = QuerySTAB();
+    
+    char line[256];
+    ZeroMemory(&line, sizeof(line));
+
+    printf("Type 'help' to see commands; q to quit.\n");
+    //Basic Shell Loop
+    while (1) {
+        printf("NetChat> ");
+        std::cin >> line;
+        printf("\n");
+        if (strcmp(line, "q") == 0) {
+            listener->runLoop = 0;
+            thread_listener->join();
+            thread_sender->join();
+
+            delete listener;
+            delete sender;
+
+            delete thread_listener;
+            delete thread_sender;
+            exit(0);
+        }
+        else if (strcmp(line, "help") == 0) {
+            printf("Commands:\n\tq\t-\tClose program.\n");
+            printf("\thelp\t-\tPrint this prompt.\n");
+            printf("\tkey\t-\tSend a STUN request to get this programs public keys.\n");
+            printf("\ttch\t-\t.Send a basic message to a given public key to test connection.\n");
+        }
+        else if (strcmp(line, "key") == 0) {
+            skey = QuerySTAB();
+            printf("%llx\n", skey);
+        }
+        else if (strcmp(line, "tch")) {
+            printf("Input skey for other user: ");
+            std::cin >> line;
+            printf("\n");
+            Touch(strtoll("line", NULL, 16));
+            printf("Touch has been sent.\n");
+        }
+    }
 
     return 0;
 }
@@ -94,34 +134,21 @@ UINT64 QuerySTAB() {
     listener->QuerySTAB(STUNAddress, &listenerIP, &listenerPort);
     UINT64 skey = 0l;
 
-    printf("Sender IP:\n\t%x\n", senderIP);
-    printf("Listen IP:\n\t%x\n", listenerIP);
+    //printf("Sender IP:\n\t%x\n", senderIP);
+    //printf("Listen IP:\n\t%x\n", listenerIP);
 
-
-    thread_listener->join();
-    thread_sender->join();
-    delete thread_listener;
-    delete thread_sender;
-    delete listener;
-    delete sender;
-    exit(0);
 
     //Compare the results.
-    if (senderIP != listenerPort) {
+    if (senderIP != listenerIP) {
         printf("Mismatch of IP's for sender and listener.\n");
         exit(1);
     }
 
-    return 0l;
+    sessionkey key;
+    key.IP = senderIP;
+    key.listenPort = listenerPort;
+    key.sendPort = senderPort;
+
+    return *(UINT64*)&key;
 }
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

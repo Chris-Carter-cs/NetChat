@@ -3,6 +3,7 @@
 int Listener::init() {
 	initSocket();
 	callRecv = 0;
+	runLoop = 1;
 	startListening();
 	return 0;
 }
@@ -50,7 +51,7 @@ int Listener::startListening() {
 	//Clear buffer.
 	ZeroMemory(buffer, BUFFER_SIZE);
 	int result = 0;
-	while (true)
+	while (runLoop)
 	{
 		if (callRecv) {
 			result = recv(listenSocket, buffer, BUFFER_SIZE, 0);
@@ -64,7 +65,7 @@ int Listener::startListening() {
 			}
 		}
 	}
-	return -1;
+	return 0;
 }
 
 void Listener::QuerySTAB(sockaddr_in _STUNAddress, UINT32* _outIP, UINT16* _outPort) {

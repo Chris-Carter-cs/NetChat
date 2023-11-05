@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include <iostream>
 #include <thread>
 #include <csignal>
@@ -11,6 +12,12 @@
 #include <string>
 
 #pragma comment(lib, "Ws2_32.lib")
+
+struct sessionkey {
+	UINT32 IP;
+	UINT16 sendPort;
+	UINT16 listenPort;
+};
 
 bool debug;
 
@@ -55,6 +62,10 @@ int ConfigureSockets();
 /// </summary>
 UINT64 QuerySTAB();
 
+/// <summary>
+/// Send a simple message to the key's destination IP and port.
+/// </summary>
+void Touch(INT64 _sessionKey);
 
 /// <summary>
 /// Try to start a session using another users session key to connect to that user.

@@ -24,12 +24,24 @@
     <ClCompile Include="Speaker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MainWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Listener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Speaker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="STUN_IF.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NetChat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
