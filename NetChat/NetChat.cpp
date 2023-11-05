@@ -1,94 +1,118 @@
 // NetChat.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#include <iostream>
-#include <thread>
-#include <csignal>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include "Speaker.h"
-#include "Listener.h"
-#include "STUN_IF.h"
-
-#pragma comment(lib, "Ws2_32.lib")
-
-std::thread* thread_listener;
-std::thread* thread_speaker;
-
-Speaker* speaker;
-Listener* listener;
-
-
-void signal_handler(int sig);
-
-void signal_handler(int sig) {
-    listener->runLoop = 0;
-
-    printf("Cleaning up WSA...\n");
-    WSACleanup();
-    
-    printf("Signal Handler called. Joining threads...\n");
-    thread_listener->join();
-    thread_speaker->join();
-
-    printf("Threads joined. Deleting thread objects...\n");
-
-    delete listener;
-    delete speaker;
-
-    delete thread_listener;
-    delete thread_speaker;
-
-    printf("Finished. Exiting.\n");
-
-    
-
-    exit(0);
-}
-
-void startListener() {
-    listener->listener_main();
-}
-
-void startSpeaker() {
-    speaker->speaker_main();
-}
+#include "NetChat.h"
 
 int main()
 {
-    /*speaker = new Speaker();
-    listener = new Listener();
+    debug = 1;
 
-
-    printf("Setting signal handler\n");
-    signal(SIGINT, signal_handler);
-
-    printf("Initilizing listener thread...\n");
-    thread_listener = new std::thread(&startListener);
-    
-    Sleep(2000);
-
-    printf("Initilizing speaker thread...\n");
-    thread_speaker = new std::thread(&startSpeaker);*/
-
-    WSAData data;
-    int result = WSAStartup(MAKEWORD(2, 2), &data);
+    //WSA Initilization.
+    int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (result != 0) {
-        printf("STUN socket failed with error %d\n", result);
+        printf("WSA startup failed with error %d\n", result);
         return 0;
     }
 
     //STUN server:   stun.l.google.com:19302
     SetServerName("stun.l.google.com");
     SetServerPort(19302);
-    TestConnection();
-    
 
-    //raise(SIGINT);
-
-    
+    ConfigureSockets();
+    QuerySTAB();
 
     return 0;
+}
+
+int ConfigureSockets() {
+    //Initilize sender and listener objects.
+    sender = new Sender();
+    listener = new Listener();
+
+    if (debug) printf("Starting listener and sender threads...\n");
+
+    //Initilize sender and listener threads.
+    thread_listener = new std::thread(&_listenerEntry);
+    thread_sender = new std::thread(&_senderEntry);
+
+    return 0;
+}
+
+UINT64 QuerySTAB() {
+    if (debug) printf("Starting the parent's QuerySTAB() function.\n");
+    //TODO:: Left off on this function last night.
+        //Should query the STAB server using both the sending and receiving sockets.
+        //The resulting information is used to create the session ID, with the format:
+        /*
+        0b              16b             32b
+        +--  --  --  -- |--  --  --  --+
+        |   Sender Port | Listen Port  |
+        |--  --  --  -- |--  --  --  --+
+        |           IP Address         |
+        +--  --  --  --  --  --  --  --+
+        */
+    //Need to get the IP of the STUN server from the name.
+    struct addrinfo hints;
+    struct addrinfo* server;
+    
+    ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    //Get the information from the DNS(?)
+    if (getaddrinfo(STUNServerName, "http", &hints, &server) != 0) {
+        printf("Error in finding server name in NetChat::QuerySTAB(): %d\n", WSAGetLastError());
+        exit(1);
+    }
+
+    struct sockaddr_in* STUNAddress_p;
+    ZeroMemory(&STUNAddress_p, sizeof(STUNAddress_p));
+    struct addrinfo* infoPointer;
+
+    for (infoPointer = server; infoPointer != NULL; infoPointer = infoPointer->ai_next) {
+        STUNAddress_p = (struct sockaddr_in*)infoPointer->ai_addr;
+        inet_ntop(AF_INET, &STUNAddress_p->sin_addr, STUNServerIP, sizeof(STUNServerIP));
+    }
+    freeaddrinfo(server);
+
+
+    struct sockaddr_in STUNAddress;
+    //Finish setting up STUN server's address
+    ZeroMemory(&STUNAddress, sizeof(STUNAddress));
+    STUNAddress.sin_family = AF_INET;
+    STUNAddress.sin_port = htons(STUNServerPort);
+    inet_pton(AF_INET, STUNServerIP, &STUNAddress.sin_addr.s_addr);
+
+    //Query the STAB using both sockets.
+    UINT32 senderIP = 0;
+    UINT16 senderPort = 0;
+
+    UINT32 listenerIP = 0;
+    UINT16 listenerPort = 0;
+
+    sender->QuerySTAB(STUNAddress, &senderIP, &senderPort);
+    listener->QuerySTAB(STUNAddress, &listenerIP, &listenerPort);
+    UINT64 skey = 0l;
+
+    printf("Sender IP:\n\t%x\n", senderIP);
+    printf("Listen IP:\n\t%x\n", listenerIP);
+
+
+    thread_listener->join();
+    thread_sender->join();
+    delete thread_listener;
+    delete thread_sender;
+    delete listener;
+    delete sender;
+    exit(0);
+
+    //Compare the results.
+    if (senderIP != listenerPort) {
+        printf("Mismatch of IP's for sender and listener.\n");
+        exit(1);
+    }
+
+    return 0l;
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
