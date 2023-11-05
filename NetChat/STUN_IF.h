@@ -35,16 +35,3 @@ struct BindingResponse {
 	//Attributes
 	INT8 Attributes[1024];
 };
-
-/// <summary>
-/// Set the name of the STUN server to be queried.
-/// </summary>
-//void SetServerName(const char* _name);
-
-/// <summary>
-/// Set the port of the STUN server to be queried.
-/// </summary>
-//void SetServerPort(int _port);
-
-void TestConnection();
-
