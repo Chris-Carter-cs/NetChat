@@ -19,7 +19,7 @@ int main()
     SetServerPort(19302);
 
     ConfigureSockets();
-    UINT64 skey = QuerySTAB();
+    QuerySTAB();
     
     char line[256];
     ZeroMemory(&line, sizeof(line));
@@ -27,19 +27,24 @@ int main()
     printf("Type 'help' to see commands; q to quit.\n");
     //Basic Shell Loop
     while (1) {
+        if (sender->messages.size() > 0) {
+            printf("Message queue is greater than 0.\n");
+            sender->sendMessage();
+        }
+
         printf("NetChat> ");
         std::cin >> line;
         printf("\n");
         if (strcmp(line, "q") == 0) {
             listener->runLoop = 0;
             thread_listener->join();
-            thread_sender->join();
+            //thread_sender->join();
 
             delete listener;
             delete sender;
 
             delete thread_listener;
-            delete thread_sender;
+            //delete thread_sender;
             exit(0);
         }
         else if (strcmp(line, "help") == 0) {
@@ -49,15 +54,18 @@ int main()
             printf("\ttch\t-\t.Send a basic message to a given public key to test connection.\n");
         }
         else if (strcmp(line, "key") == 0) {
-            skey = QuerySTAB();
-            printf("%llx\n", skey);
+            QuerySTAB();
+            
         }
-        else if (strcmp(line, "tch")) {
-            printf("Input skey for other user: ");
+        else if (strcmp(line, "tch") == 0) {
+            printf("Input <IP:Port> for other user: ");
             std::cin >> line;
             printf("\n");
-            Touch(strtoll("line", NULL, 16));
-            printf("Touch has been sent.\n");
+            Touch(line);
+            //printf("Touch1 has been sent.\n");
+            //Sleep(3500);
+            //Touch(line);
+            //printf("Touch2 has been sent.\n");
         }
     }
 
@@ -73,12 +81,13 @@ int ConfigureSockets() {
 
     //Initilize sender and listener threads.
     thread_listener = new std::thread(&_listenerEntry);
-    thread_sender = new std::thread(&_senderEntry);
+    //hread_sender = new std::thread(&_senderEntry);
+    _senderEntry();
 
     return 0;
 }
 
-UINT64 QuerySTAB() {
+void QuerySTAB() {
     if (debug) printf("Starting the parent's QuerySTAB() function.\n");
     //TODO:: Left off on this function last night.
         //Should query the STAB server using both the sending and receiving sockets.
@@ -145,10 +154,36 @@ UINT64 QuerySTAB() {
     }
 
     sessionkey key;
-    key.IP = senderIP;
+    key.IP.IPW = senderIP;
     key.listenPort = listenerPort;
     key.sendPort = senderPort;
 
-    return *(UINT64*)&key;
+    
+    std::string output = std::to_string(key.IP.IPC[0]);
+    output += ".";
+    output += std::to_string(key.IP.IPC[1]);
+    output += ".";
+    output += std::to_string(key.IP.IPC[2]);
+    output += ".";
+    output += std::to_string(key.IP.IPC[3]);
+    
+    printf("Receiver:\n");
+    printf("%d.%d.%d.%d:%d\n", key.IP.IPC[0], key.IP.IPC[1], key.IP.IPC[2], key.IP.IPC[3], key.listenPort);
+    printf("Sender:\n");
+    printf("%d.%d.%d.%d:%d\n", key.IP.IPC[0], key.IP.IPC[1], key.IP.IPC[2], key.IP.IPC[3], key.sendPort);
+}
+
+void Touch(char* _IPString) {
+    std::string str(_IPString);
+    int s = str.find(":");
+    std::string pstr = str.substr(s + 1, str.size() - s);
+    //printf("pstr: %s\n", pstr.c_str());
+    UINT16 port = std::stoul(pstr);
+    
+    
+    printf("Debugged call to touch with the following values:\n");
+    printf("\tIP: %s\n\tPort: %d\n", str.substr(0, s).c_str(), port);
+
+    sender->EnqueueMessage(str.substr(0, s).c_str(), port, "Test Message.");
 }
 

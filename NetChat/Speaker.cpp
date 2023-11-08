@@ -88,23 +88,42 @@ void Sender::QuerySTAB(sockaddr_in _STUNAddress, UINT32* _outIP, UINT16* _outPor
 
 int Sender::sendMessage() {
 	printf("Sending message...\n");
-	ZeroMemory(&dstAddr, sizeof(dstAddr));
-	dstAddr.sin_family = AF_INET;
-	dstAddr.sin_port = htons(5850);
-	inet_pton(AF_INET, "127.0.0.1", &dstAddr.sin_addr.s_addr);
 
-	ZeroMemory(buffer, BUFFER_SIZE);
-	strcpy_s(buffer, "Cross-port message!");
+	QueuedMessage msg = messages.front();
 
 	int result;
-	result = sendto(senderSocket, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&dstAddr, BUFFER_SIZE);
+	result = sendto(senderSocket, msg.message, MESSAGE_LENGTH, 0, (struct sockaddr*)&msg.dest, MESSAGE_LENGTH);
 	if (result < 0) {
 		printf("Error in send of type %d\n", WSAGetLastError());
+		return 1;
 	}
 	printf("Message sent!\n");
 
 	return 0;
 }
+
+void Sender::EnqueueMessage(const char* _IPStr, UINT16 _port, const char* contents) {
+	QueuedMessage msg;
+	ZeroMemory(&msg, sizeof(msg));
+	//msg.dest.sin_addr = _ip;
+	msg.dest.sin_port = _port;
+	msg.dest.sin_family = AF_INET;
+	inet_pton(AF_INET, _IPStr, &msg.dest.sin_addr.s_addr);
+
+	//STUNAddress.sin_port = htons(STUNServerPort);
+	//inet_pton(AF_INET, STUNServerIP, &STUNAddress.sin_addr.s_addr);
+
+	char c;
+	int i = 0;
+	do {
+		c = contents[i];
+		msg.message[i] = c;
+		i++;
+	} while (c != 0 && i < MESSAGE_LENGTH - 1);
+
+	messages.push(msg);
+}
+
 
 Sender::~Sender() {
 	closesocket(senderSocket);

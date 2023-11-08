@@ -61,7 +61,7 @@ int Listener::startListening() {
 			}
 			if (result > 0) {
 				//Process data...
-				printf("\tLength %d Datagram received: %s\n", result, buffer);
+				printf("\tLength %d Datagram received:\n\t%s\n", result, buffer);
 			}
 		}
 	}
