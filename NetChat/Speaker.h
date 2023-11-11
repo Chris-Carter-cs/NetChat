@@ -17,9 +17,6 @@ class Sender
 	struct sockaddr_in senderAddr;
 	SOCKET senderSocket;
 
-	//struct sockaddr_in dstAddr;
-	//SOCKET dstSocket;
-
 	WSAData data;
 	short speakPort;
 

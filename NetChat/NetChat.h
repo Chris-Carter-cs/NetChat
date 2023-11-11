@@ -10,7 +10,7 @@
 #include "Listener.h"
 #include "STUN_IF.h"
 #include <string>
-#include <format>
+#include <time.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -27,9 +27,13 @@ struct sessionkey {
 
 bool debug;
 
+time_t LastMessage;	//Used to keep messages alive since this is using UDP.
+
 char STUNServerName[256];
 char STUNServerIP[256];
 UINT16 STUNServerPort;
+
+
 
 /// <summary>
 /// Set the name of the STUN server to be queried.
@@ -37,6 +41,7 @@ UINT16 STUNServerPort;
 void SetServerName(const char* _name) { 
 	if (debug) printf("Setting server name to %s.\n", _name);
 	strcpy_s(STUNServerName, _name); 
+
 }
 
 /// <summary>

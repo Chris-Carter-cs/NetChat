@@ -110,9 +110,6 @@ void Sender::EnqueueMessage(const char* _IPStr, UINT16 _port, const char* conten
 	msg.dest.sin_family = AF_INET;
 	inet_pton(AF_INET, _IPStr, &msg.dest.sin_addr.s_addr);
 
-	//STUNAddress.sin_port = htons(STUNServerPort);
-	//inet_pton(AF_INET, STUNServerIP, &STUNAddress.sin_addr.s_addr);
-
 	char c;
 	int i = 0;
 	do {

@@ -77,7 +77,7 @@ void Listener::QuerySTAB(sockaddr_in _STUNAddress, UINT32* _outIP, UINT16* _outP
 	printf("Sending STUN request for Sender.\n");
 	sendto(listenSocket, (char*)&request, sizeof(request), 0, (sockaddr*)&_STUNAddress, sizeof(_STUNAddress));
 
-	//Set up the values for the call to `select()`
+	//Set up the values for the listening loop
 	INT64 timeout = 5000l;
 
 	int attempt = 0;
